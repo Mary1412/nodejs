@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>School</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <style>
+      a {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>School</h2>
+    
+    <form id="form" name="Form">
+      <input type="hidden" name="id" value="0">
+      <div class="form-group">
+        <label for="class">Class:</label>
+        <input class="form-control" name="class">
+      </div>
+      <div class="form-group">
+        <label for="subject">Subject:</label>
+        <input class="form-control" name="subject">
+      </div>
+      <div class="panel-body">
+        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+        
+      </div>
+    </form>
+
+    <table class="table table-condensed table-stripted table-bordered">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Class</th>
+          <th>Subject</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+
+    <script>
+       async function getSs() {
+        
+        let response = await fetch("/api/school", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8"
+          }
+        });
+        
+        let schools = await response.json();
+        let rows = "";
+        
+        for (let school of schools) {
+          rows += row(school);
+        }
+
+        tbody = document.querySelector("tbody");
+        tbody.insertAdjacentHTML("afterbegin", rows);
+      }
+
+      async function getS(id) {
+        
+        let response = await fetch("/api/school/" + id, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8"
+          }
+        });
+        
+        let school = await response.json();
+        
+        let form = document.forms["Form"];
+        form.elements["id"].value = school.id;
+        form.elements["class"].value = school.class;
+        form.elements["subject"].value = school.subject;
+
+      }
+
+      async function createS(shClass, shSubject) {
+        
+        let response = await fetch("/api/school", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8"
+          },
+          body: JSON.stringify({
+            class: shClass,
+            subject: shSubject
+          })
+        });
+
+        let school = await response.json();
+        school.class = shClass;
+        school.subject = shSubject;
+        
+       
+        form.elements["id"].value = 0;
+        form.elements["class"].value = "";
+        form.elements["subject"].value = "";
+
+        let tbody = document.querySelector("tbody");
+        tbody.insertAdjacentHTML("beforeend", row(school));
+
+      }
+
+      async function editS(shId, shClass, shSubject) {
+
+        let response = await fetch("/api/school", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8"
+          },
+          body: JSON.stringify({
+            id: shId,
+            class: shClass,
+            subject: shSubject
+          })
+        });
+
+        let school = await response.json();
+
+          
+        form.elements["id"].value = 0;
+        form.elements["class"].value = "";
+        form.elements["subject"].value = "";
+        
+
+        let tr = document.querySelector(`tr[data-rowid="${school.id}"]`);
+        tr.insertAdjacentHTML("beforebegin", row(school));
+        tr.remove();
+      }
+
+      async function deleteS(id) {
+
+        let response = await fetch("/api/school/" + id, {
+          method: "DELETE",
+          headers: { "Accept": "application/json" }
+        });
+        if (response.ok === true) {
+                const school = await response.json();
+                document.querySelector("tr[data-rowid='" + school.id + "']").remove();
+            }
+      }
+
+
+  
+
+      function row(school) {
+
+        return `<tr data-rowid="${school.id}">
+                  <td>${school.id}</td>
+                  <td>${school.class}</td>
+                  <td>${school.subject}</td>
+                  <td>
+                    <a class="editLink" data-id="${school.id}">Change</a> |
+                    <a class="removeLink" data-id="${school.id}">Remove</a>
+                  </td>
+                </tr>`
+      }
+
+    
+
+     
+
+
+   
+
+      let form = document.querySelector("form");
+
+      form.addEventListener("submit", function(event) {
+
+        event.preventDefault();
+        let id = this.elements["id"].value;
+        let class1 = this.elements["class"].value;
+        let subject = this.elements["subject"].value;
+
+        if (id == 0) {
+          createS(class1, subject);
+        } else {
+          editS(id, class1, subject);
+        }
+      });
+
+      document.body.addEventListener("click", function(event) {
+        
+        if (event.target.className != "editLink") return;
+
+        let id = event.target.dataset.id;
+
+        getS(id);
+      });
+
+      document.body.addEventListener("click", function(event) {
+
+        if (event.target.className != "removeLink") return;
+
+        let id = event.target.dataset.id;
+
+        deleteS(id);
+      });
+
+      getSs();
+      
+    </script>
+  </body>
+</html>
